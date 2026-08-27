@@ -97,3 +97,24 @@ for alpha in [0.01, 0.1, 1.0, 10.0]:
     res = analyse(V, 60.0, 1e-6, end_hi)
     print(f"{alpha:8.3f} {res['phi_end']:9.4f} {res['phi_star']:9.4f} "
           f"{res['ns']:8.4f} {res['r']:11.3e} {res['dphi']:8.3f}")
+
+          # ================================================================
+# 临界点：Delta phi = 1 M_Pl
+# ================================================================
+
+def dphi_of_alpha(log_alpha, N_target):
+    """给定 log10(alpha)，返回该模型的 Delta phi"""
+    alpha = 10.0 ** log_alpha
+    V = V_emodel(alpha)
+    end_hi = 15.0 * np.sqrt(1.5 * alpha)
+    return analyse(V, N_target, 1e-6, end_hi)['dphi']
+
+print()
+print("E-model: Delta phi = 1 M_Pl 的临界点")
+print(f"{'N':>4} {'alpha_crit':>12} {'ns':>9} {'r':>12} {'dphi':>8}")
+for N_target in [50.0, 60.0, 70.0]:
+    log_a = brentq(lambda la: dphi_of_alpha(la, N_target) - 1.0, -3.0, 1.0)
+    alpha_c = 10.0 ** log_a
+    V = V_emodel(alpha_c)
+    res = analyse(V, N_target, 1e-6, 15.0 * np.sqrt(1.5 * alpha_c))
+    print(f"{N_target:4.0f} {alpha_c:12.6f} {res['ns']:9.4f} {res['r']:12.4e} {res['dphi']:8.4f}")
