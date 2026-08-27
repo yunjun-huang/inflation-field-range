@@ -102,3 +102,10 @@ reheating-driven e-fold uncertainty"的表述不成立，需在论文中明确�
 
 quad 在 slowroll.py:32 仍有 IntegrationWarning（roundoff error）。
 数值结果与独立计算一致（N_crit 独立值
+
+### 已解决
+
+quad 的 IntegrationWarning：将容差放宽至 epsabs=1e-8, epsrel=1e-6。
+理由：N 的物理不确定性为 +-5 e-folds，原默认容差 1.49e-8 远超实际需求。
+修改后警告消失，所有结果不变（N=55 处 ns 由 0.9638 变为 0.9637，
+第四位小数级差异，判决不变）。
