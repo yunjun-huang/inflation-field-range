@@ -206,3 +206,23 @@ for p in [8, 12, 20]:
               f"{best['dphi_over_mu']:9.4f} {best['dphi']:8.2f} {best['ns']:8.4f} {best['r']:10.2e}")
     else:
         print(f"{p:4}    无解")
+
+def dphi_of_mu(log_mu, p, N_target):
+    """给定 log10(mu)，返回 hilltop 的 Delta phi"""
+    return analyse_hilltop(p, 10.0 ** log_mu, N_target)['dphi']
+
+print()
+print("hilltop: Delta phi = 1 M_Pl 的临界点")
+print(f"{'p':>4} {'N':>4} {'mu_crit':>9} {'ns':>9} {'r':>12} {'dphi':>8} {'verdict':>8}")
+for p in [8, 12, 20]:
+    for N_t in [50.0, 60.0, 70.0]:
+        try:
+            lm = brentq(lambda l: dphi_of_mu(l, p, N_t) - 1.0, -1.0, 2.0)
+        except Exception:
+            print(f"{p:4} {N_t:4.0f}   root-finding failed")
+            continue
+        mu_c = 10.0 ** lm
+        s = analyse_hilltop(p, mu_c, N_t)
+        verdict = "allowed" if s['ns'] >= NS_ACT_LOW else "excluded"
+        print(f"{p:4} {N_t:4.0f} {mu_c:9.3f} {s['ns']:9.4f} {s['r']:12.4e} "
+              f"{s['dphi']:8.4f} {verdict:>8}")
