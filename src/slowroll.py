@@ -29,7 +29,7 @@ def phi_end(V, lo, hi):
 def N_efolds(V, phi, phi_e):
     """从 phi 滚到 phi_e 经历的 e-folds"""
     integrand = lambda p: 1.0 / np.sqrt(2.0 * epsilon(V, p))
-    result, err = quad(integrand, phi_e, phi, limit=200)
+    result, err = quad(integrand, phi_e, phi, limit=400, epsabs=1e-8, epsrel=1e-6)
     return result
 
 def phi_star(V, phi_e, N_target, step=0.5, max_expand=200):
