@@ -143,3 +143,46 @@ for N_target in [55.0, 58.0, 60.0, 62.0, 65.0, 70.0]:
 N_crit = brentq(lambda N: ns_at_critical_alpha(N) - NS_ACT_LOW, 55.0, 70.0)
 print()
 print(f"临界 e-folds  N_crit = {N_crit:.2f}")
+
+# ================================================================
+# hilltop:  V = V0 [1 - (phi/mu)^p]
+# 场从 phi≈0 向外滚到 phi=mu，方向与 E-model 相反
+# ================================================================
+
+def V_hilltop(p, mu):
+    """hilltop 势能"""
+    return lambda phi: 1.0 - (phi / mu) ** p
+
+def analyse_hilltop(p, mu, N_target, step_frac=0.02):
+    """hilltop 的四步流程（场向外滚，phi_star < phi_end）"""
+    V = V_hilltop(p, mu)
+
+    # 1. phi_end: 解 eps=1，在 (0, mu) 内
+    pe = brentq(lambda phi: epsilon(V, phi) - 1.0, 1e-12 * mu, mu * (1 - 1e-12))
+
+    # 2. phi_star: 从 phi_end 向内（向山顶）收缩，直到 N 超过目标
+    hi = pe * (1 - 1e-9)
+    lo = hi
+    for _ in range(4000):
+        lo = lo * (1 - step_frac)
+        if N_efolds(V, pe, lo) > N_target:
+            break
+    else:
+        raise RuntimeError(f"未能框住 N={N_target} (p={p}, mu={mu})")
+    ps = brentq(lambda phi: N_efolds(V, pe, phi) - N_target, lo, hi)
+
+    e, h = epsilon(V, ps), eta(V, ps)
+    return dict(phi_end=pe, phi_star=ps,
+                ns=1.0 - 6.0 * e + 2.0 * h, r=16.0 * e,
+                dphi=pe - ps, x_star=ps / mu, x_end=pe / mu,
+                dphi_over_mu=(pe - ps) / mu)
+
+print()
+print("hilltop 小场极限验证：ns -> 1 - 2(p-1)/[(p-2)N]")
+print(f"{'p':>4} {'N':>4} {'mu':>6} {'ns_num':>9} {'ns_formula':>11} {'rel.err':>10}")
+for p in [8, 12, 20]:
+    for N_t in [50.0, 60.0, 70.0]:
+        res = analyse_hilltop(p, 0.1, N_t)
+        formula = 1.0 - 2.0 * (p - 1) / ((p - 2) * N_t)
+        print(f"{p:4} {N_t:4.0f} {0.1:6.2f} {res['ns']:9.5f} {formula:11.5f} "
+              f"{abs(res['ns']/formula - 1):10.2e}")
