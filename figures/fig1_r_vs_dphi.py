@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import numpy as np
 import matplotlib.pyplot as plt
-from slowroll import V_emodel, analyse
+from slowroll import V_emodel, analyse, analyse_hilltop
 
 N_TARGET = 60.0
 SIGMA_R_NEXTGEN = 1e-3          # CMB-S4 / LiteBIRD 目标灵敏度
@@ -17,9 +17,22 @@ for a in alphas:
     rs.append(res['r'])
     dphis.append(res['dphi'])
 
+# hilltop，扫 mu（固定 p）
+P_HILL = 8
+mus = np.geomspace(0.5, 60.0, 60)
+rs_h, dphis_h = [], []
+for m in mus:
+    try:
+        res = analyse_hilltop(P_HILL, m, N_TARGET)
+    except Exception:
+        continue
+    rs_h.append(res['r'])
+    dphis_h.append(res['dphi'])
 fig, ax = plt.subplots(figsize=(6.0, 4.5))
 
 ax.loglog(rs, dphis, color='k', lw=1.8, label=r'$\alpha$-attractor (E-model)')
+ax.loglog(rs_h, dphis_h, color='k', lw=1.5, ls='--',
+          label=rf'hilltop ($p={P_HILL}$)')
 ax.axhspan(1.0, 20.0, color='0.92', zorder=0)
 ax.axhline(1.0, color='0.4', ls='--', lw=1.2)
 ax.axvline(SIGMA_R_NEXTGEN, color='0.4', ls=':', lw=1.2)
@@ -29,6 +42,7 @@ ax.text(1.25e-3, 12.0, r'CMB-S4 / LiteBIRD  $\sigma(r)$',
         fontsize=8, color='0.3', rotation=90, va='top')
 
 ax.plot(5.8325e-05, 1.0, 'o', ms=5, color='k', zorder=5)
+ax.plot(2.7563e-05, 1.0, 's', ms=5, color='k', mfc='white', zorder=5)
 ax.annotate(r'$r_{\rm crit} = 5.8 \times 10^{-5}$',
             xy=(5.8325e-05, 1.0), xytext=(1.5e-6, 2.5),
             fontsize=8, arrowprops=dict(arrowstyle='->', lw=0.8, color='0.3'))
