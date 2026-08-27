@@ -20,13 +20,18 @@ for a in alphas:
 fig, ax = plt.subplots(figsize=(6.0, 4.5))
 
 ax.loglog(rs, dphis, color='k', lw=1.8, label=r'$\alpha$-attractor (E-model)')
+ax.axhspan(1.0, 20.0, color='0.92', zorder=0)
 ax.axhline(1.0, color='0.4', ls='--', lw=1.2)
 ax.axvline(SIGMA_R_NEXTGEN, color='0.4', ls=':', lw=1.2)
 
 ax.text(2e-6, 1.15, r'$\Delta\phi = M_{\rm Pl}$', fontsize=9, color='0.3')
-ax.text(1.25e-3, 0.13, r'CMB-S4 / LiteBIRD  $\sigma(r)$',
-        fontsize=9, color='0.3', rotation=90, va='bottom')
+ax.text(1.25e-3, 12.0, r'CMB-S4 / LiteBIRD  $\sigma(r)$',
+        fontsize=8, color='0.3', rotation=90, va='top')
 
+ax.plot(5.8325e-05, 1.0, 'o', ms=5, color='k', zorder=5)
+ax.annotate(r'$r_{\rm crit} = 5.8 \times 10^{-5}$',
+            xy=(5.8325e-05, 1.0), xytext=(1.5e-6, 2.5),
+            fontsize=8, arrowprops=dict(arrowstyle='->', lw=0.8, color='0.3'))
 ax.set_xlim(1e-6, 1e-1)
 ax.set_ylim(0.1, 20.0)
 ax.set_xlabel(r'tensor-to-scalar ratio  $r$')
