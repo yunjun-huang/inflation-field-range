@@ -118,3 +118,28 @@ for N_target in [50.0, 60.0, 70.0]:
     V = V_emodel(alpha_c)
     res = analyse(V, N_target, 1e-6, 15.0 * np.sqrt(1.5 * alpha_c))
     print(f"{N_target:4.0f} {alpha_c:12.6f} {res['ns']:9.4f} {res['r']:12.4e} {res['dphi']:8.4f}")
+
+    # ================================================================
+# 临界 e-folds：亚普朗克点何时进入 ACT 窗口
+# ================================================================
+
+NS_ACT_LOW = 0.9743 - 2 * 0.0034      # P-ACT-LB 的 2sigma 下沿
+
+def ns_at_critical_alpha(N_target):
+    """给定 N，求 Delta phi = 1 的那个模型的 ns"""
+    log_a = brentq(lambda la: dphi_of_alpha(la, N_target) - 1.0, -3.0, 1.0)
+    alpha_c = 10.0 ** log_a
+    V = V_emodel(alpha_c)
+    return analyse(V, N_target, 1e-6, 15.0 * np.sqrt(1.5 * alpha_c))['ns']
+
+print()
+print(f"ACT 2sigma 下沿 ns = {NS_ACT_LOW:.4f}")
+print(f"{'N':>5} {'ns @ dphi=1':>12} {'判决':>8}")
+for N_target in [55.0, 58.0, 60.0, 62.0, 65.0, 70.0]:
+    ns_c = ns_at_critical_alpha(N_target)
+    verdict = "允许" if ns_c >= NS_ACT_LOW else "排除"
+    print(f"{N_target:5.0f} {ns_c:12.4f} {verdict:>8}")
+
+N_crit = brentq(lambda N: ns_at_critical_alpha(N) - NS_ACT_LOW, 55.0, 70.0)
+print()
+print(f"临界 e-folds  N_crit = {N_crit:.2f}")
