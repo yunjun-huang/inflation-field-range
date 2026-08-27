@@ -109,3 +109,19 @@ quad 的 IntegrationWarning：将容差放宽至 epsabs=1e-8, epsrel=1e-6。
 理由：N 的物理不确定性为 +-5 e-folds，原默认容差 1.49e-8 远超实际需求。
 修改后警告消失，所有结果不变（N=55 处 ns 由 0.9638 变为 0.9637，
 第四位小数级差异，判决不变）。
+
+## 2026-08-27 Fig 1：场程 vs 张量-标量比
+
+文件：figures/fig1_r_vs_dphi.py -> fig1_r_vs_dphi.pdf / .png
+
+内容：alpha-attractor E-model，N=60，扫 alpha 从 1e-3 到 30（60 个点），
+在 (r, dphi) 平面作图。标注：
+- 灰色区域 dphi > 1 M_Pl（超普朗克）
+- 黑点 r_crit = 5.8325e-05
+- 竖虚线 CMB-S4 / LiteBIRD 目标灵敏度 sigma(r) ~ 1e-3
+
+纵轴范围取 0.1 到 20，横轴 1e-6 到 1e-1。
+横轴下限 1e-6 依教授建议：r_crit ~ 5.8e-5 落在图的中下部，
+与 1e-3 竖线之间的间距清晰可读；若画到 1e-10 则全部挤在右上角。
+
+图的结论：可探测的原初引力波（r > 1e-3）全部对应超普朗克场程。
