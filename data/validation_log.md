@@ -262,3 +262,37 @@ c ~ 0.002，c' ~ 0.02，两支均比 O(1) 小两个数量级。
 data/critical_points.csv：12 行（E-model 3 行 + hilltop 9 行），
 字段 model, p, param_crit, N, ns, r, c, c_prime, verdict。
 论文表格直接取用，不再从终端誊抄。
+
+## 2026-08-27 引擎重构与测试固化
+
+### slowroll.py 重构
+
+所有函数定义与常量移至模块层，所有打印与计算移入 main()，
+文件末尾加 `if __name__ == "__main__":` 保护。
+逻辑与数值一行未改，属纯结构调整。
+
+回归检查：重构后 `python src/slowroll.py` 的输出与重构前逐项比对，
+Delta phi = 14.142136、N_crit = 61.37、alpha_crit 三值、
+hilltop 九行临界点、swampland 六行、hilltop N_crit 三值，全部一致。
+
+动机：重构前 `import slowroll` 会执行全部计算并刷屏，tests/ 无法导入引擎。
+
+### tests/test_slowroll.py
+
+七条测试，pytest 全部通过：
+
+| 测试 | 靶标 | 覆盖分支 |
+|---|---|---|
+| test_quadratic_slow_roll_parameters | eps = eta = 2/phi^2 | 单调大场 |
+| test_quadratic_trajectory | phi_end、phi_*、Delta phi 闭式解 | 单调大场 |
+| test_emodel_reference_values | alpha=1, N=60 文献值 | plateau |
+| test_hilltop_small_field_limit | Lynker-Schimmrigk Eq.(10)，九点 | hilltop |
+| test_emodel_critical_point_N60 | alpha_crit=0.017612, r=5.8325e-05 | 回归 |
+| test_hilltop_critical_point_p8_N60 | mu_crit=2.012, r=2.7563e-05 | 回归 |
+| test_mu_crit_is_super_planckian | mu_crit > 1 而 Delta phi = 1 | 论断 |
+
+最后一条锁的不是数值而是论断本身：mu 亚普朗克与 Delta phi 亚普朗克
+不等价，这一观察要写进正文，因此需要有测试守着。
+
+两条 dphi = 1.0 的断言（容差 1e-6）是求根的自洽检验，
+与 critical_points.csv 中 dphi 列全为 1.0000 对应。
