@@ -186,3 +186,23 @@ for p in [8, 12, 20]:
         formula = 1.0 - 2.0 * (p - 1) / ((p - 2) * N_t)
         print(f"{p:4} {N_t:4.0f} {0.1:6.2f} {res['ns']:9.5f} {formula:11.5f} "
               f"{abs(res['ns']/formula - 1):10.2e}")
+
+print()
+print("旧 bug 诊断：ACT 窗口内最小场程点，看 dphi/mu")
+print(f"{'p':>4} {'mu':>8} {'x_star':>8} {'x_end':>8} {'dphi/mu':>9} {'dphi':>8} {'ns':>8} {'r':>10}")
+NS_LO, NS_HI, R_MAX = 0.9675, 0.9811, 0.036
+for p in [8, 12, 20]:
+    best = None
+    for mu in np.geomspace(1.0, 400.0, 200):
+        try:
+            s = analyse_hilltop(p, mu, 60.0)
+        except Exception:
+            continue
+        if NS_LO <= s['ns'] <= NS_HI and s['r'] < R_MAX:
+            if best is None or s['dphi'] < best['dphi']:
+                best = dict(s, mu=mu)
+    if best:
+        print(f"{p:4} {best['mu']:8.2f} {best['x_star']:8.4f} {best['x_end']:8.4f} "
+              f"{best['dphi_over_mu']:9.4f} {best['dphi']:8.2f} {best['ns']:8.4f} {best['r']:10.2e}")
+    else:
+        print(f"{p:4}    无解")
