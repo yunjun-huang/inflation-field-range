@@ -226,3 +226,88 @@ for p in [8, 12, 20]:
         verdict = "allowed" if s['ns'] >= NS_ACT_LOW else "excluded"
         print(f"{p:4} {N_t:4.0f} {mu_c:9.3f} {s['ns']:9.4f} {s['r']:12.4e} "
               f"{s['dphi']:8.4f} {verdict:>8}")
+
+              # ================================================================
+# swampland 诊断：精化 dS 猜想的两支
+#   |grad V|/V >= c   或   min(grad grad V)/V <= -c'
+# ================================================================
+
+def swampland_c(res):
+    """c = sqrt(2 eps) = sqrt(r/8)"""
+    return np.sqrt(res['r'] / 8.0)
+
+print()
+print("swampland 双支诊断（在 Delta phi = 1 的临界点上）")
+print(f"{'model':>18} {'N':>4} {'c=sqrt(r/8)':>12} {'|eta|':>9} {'ns':>8}")
+for N_t in [50.0, 60.0, 70.0]:
+    la = brentq(lambda l: dphi_of_alpha(l, N_t) - 1.0, -3.0, 1.0)
+    a_c = 10.0 ** la
+    V = V_emodel(a_c)
+    s = analyse(V, N_t, 1e-6, 15.0 * np.sqrt(1.5 * a_c))
+    c = np.sqrt(s['r'] / 8.0)
+    cp = abs(eta(V, s['phi_star']))
+    print(f"{'E-model':>18} {N_t:4.0f} {c:12.5f} {cp:9.5f} {s['ns']:8.4f}")
+for N_t in [50.0, 60.0, 70.0]:
+    lm = brentq(lambda l: dphi_of_mu(l, 8, N_t) - 1.0, -1.0, 2.0)
+    mu_c = 10.0 ** lm
+    s = analyse_hilltop(8, mu_c, N_t)
+    Vh = V_hilltop(8, mu_c)
+    c = np.sqrt(s['r'] / 8.0)
+    cp = abs(eta(Vh, s['phi_star']))
+    print(f"{'hilltop p=8':>18} {N_t:4.0f} {c:12.5f} {cp:9.5f} {s['ns']:8.4f}")
+
+
+# ================================================================
+# hilltop 的临界 e-folds
+# ================================================================
+
+def ns_at_crit_mu(p, N_target):
+    lm = brentq(lambda l: dphi_of_mu(l, p, N_target) - 1.0, -1.0, 2.0)
+    return analyse_hilltop(p, 10.0 ** lm, N_target)['ns']
+
+print()
+print("hilltop 临界 e-folds")
+for p in [8, 12, 20]:
+    try:
+        Nc = brentq(lambda N: ns_at_crit_mu(p, N) - NS_ACT_LOW, 55.0, 95.0)
+        print(f"  p={p:3}  N_crit = {Nc:.2f}")
+    except Exception:
+        print(f"  p={p:3}  在 [55, 95] 内无解")
+
+
+# ================================================================
+# 导出 CSV，供论文表格使用
+# ================================================================
+
+import csv, os
+
+out_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+rows = []
+for N_t in [50.0, 60.0, 70.0]:
+    la = brentq(lambda l: dphi_of_alpha(l, N_t) - 1.0, -3.0, 1.0)
+    a_c = 10.0 ** la
+    V = V_emodel(a_c)
+    s = analyse(V, N_t, 1e-6, 15.0 * np.sqrt(1.5 * a_c))
+    rows.append(['E-model', '', f"{a_c:.6f}", f"{N_t:.0f}", f"{s['ns']:.4f}",
+                 f"{s['r']:.4e}", f"{np.sqrt(s['r']/8):.5f}",
+                 f"{abs(eta(V, s['phi_star'])):.5f}",
+                 'allowed' if s['ns'] >= NS_ACT_LOW else 'excluded'])
+for p in [8, 12, 20]:
+    for N_t in [50.0, 60.0, 70.0]:
+        lm = brentq(lambda l: dphi_of_mu(l, p, N_t) - 1.0, -1.0, 2.0)
+        mu_c = 10.0 ** lm
+        s = analyse_hilltop(p, mu_c, N_t)
+        Vh = V_hilltop(p, mu_c)
+        rows.append([f'hilltop', f"{p}", f"{mu_c:.4f}", f"{N_t:.0f}",
+                     f"{s['ns']:.4f}", f"{s['r']:.4e}",
+                     f"{np.sqrt(s['r']/8):.5f}",
+                     f"{abs(eta(Vh, s['phi_star'])):.5f}",
+                     'allowed' if s['ns'] >= NS_ACT_LOW else 'excluded'])
+
+csv_path = os.path.join(out_dir, 'critical_points.csv')
+with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+    w = csv.writer(f)
+    w.writerow(['model', 'p', 'param_crit', 'N', 'ns', 'r', 'c', 'c_prime', 'verdict'])
+    w.writerows(rows)
+print()
+print(f"CSV 已导出: {csv_path}")
