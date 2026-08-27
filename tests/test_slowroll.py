@@ -17,7 +17,8 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from slowroll import (V_quad, V_emodel, analyse, analyse_hilltop,
-                      epsilon, eta, dphi_of_alpha, dphi_of_mu)
+                      epsilon, eta, dphi_of_alpha, dphi_of_mu,
+                      lyth_bound_constant_tilt)
 from scipy.optimize import brentq
 
 
@@ -103,3 +104,33 @@ def test_mu_crit_is_super_planckian():
     for p in [8, 12, 20]:
         lm = brentq(lambda l: dphi_of_mu(l, p, 60.0) - 1.0, -1.0, 2.0)
         assert 10.0 ** lm > 1.0, f"p={p} 的 mu_crit 不再是超普朗克"
+
+# ================================================================
+# 外部靶标：Yang et al. (arXiv:2606.16711) Table 1
+#   ns=1 与 Planck 两列精确复现；ACT 列需用 ns=0.974（见 validation_log）
+# ================================================================
+
+def test_lyth_bound_reproduces_published_table():
+    """复现 Table 1 的 ns=1 与 Planck 2018 两列，三位有效数字"""
+    for N, expected in [(50, 3.20e-3), (60, 2.22e-3),
+                        (70, 1.63e-3), (80, 1.25e-3)]:
+        assert abs(lyth_bound_constant_tilt(1.0, N) / expected - 1) < 5e-3
+
+    for N, expected in [(50, 1.25e-3), (60, 7.07e-4),
+                        (70, 4.22e-4), (80, 2.61e-4)]:
+        assert abs(lyth_bound_constant_tilt(0.9649, N) / expected - 1) < 5e-3
+
+
+def test_lyth_bound_act_column_uses_rounded_ns():
+    """ACT 列用 ns=0.974 才能复现；用 0.9743 会高约 1%"""
+    for N, expected in [(50, 1.61e-3), (60, 9.69e-4),
+                        (70, 6.14e-4), (80, 4.04e-4)]:
+        assert abs(lyth_bound_constant_tilt(0.974, N) / expected - 1) < 5e-3
+    assert lyth_bound_constant_tilt(0.9743, 60) / 9.69e-4 > 1.005
+
+
+def test_exact_bound_is_stricter_than_constant_tilt():
+    """核心对照：精确积分比常倾斜近似严 15 倍以上"""
+    r_ct = lyth_bound_constant_tilt(0.9743, 60.0)
+    r_exact = 5.8325e-05          # E-model, N=60, 见 critical_points.csv
+    assert r_ct / r_exact > 15.0

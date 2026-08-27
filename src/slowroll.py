@@ -116,6 +116,19 @@ def swampland_c(res):
     """c = sqrt(2 eps) = sqrt(r/8)"""
     return np.sqrt(res['r'] / 8.0)
 
+def lyth_bound_constant_tilt(ns, N_star):
+    """常倾斜近似下的 Lyth bound 上限。
+
+    Yang, Tao, Wang & Zhu (arXiv:2606.16711) Eq. (22)：
+    在 r(N) = r_* exp(delta N) 的近似下，Delta chi <= M_Pl 要求
+        r_* <= 2 delta^2 / (exp(delta N_*/2) - 1)^2,  delta = 1 - ns
+    delta -> 0 时退化为 r_* <= 8/N_*^2。
+    """
+    delta = 1.0 - ns
+    if delta == 0.0:
+        return 8.0 / N_star**2
+    return 2.0 * delta**2 / (np.exp(delta * N_star / 2.0) - 1.0)**2
+
 def main():
 
     # --- 验证 1：m^2 phi^2 有闭式解 ---
