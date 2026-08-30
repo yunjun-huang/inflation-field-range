@@ -297,6 +297,32 @@ def main():
     print()
     print(f"CSV 已导出: {csv_path}")
 
+    # ------------------------------------------------------------
+    # 常倾斜界与精确 r_crit 的倍数（论文 Table 2）
+    # ------------------------------------------------------------
+
+    NS_PAPER = 0.9743
+    print()
+    print(f"常倾斜界 / 精确 r_crit 的倍数（ns = {NS_PAPER:.4f}）")
+    print(f"{'model':>14} {'N':>4} {'r_ct':>11} {'r_exact':>11} {'ratio':>7}")
+    ratios = []
+    for N_t in [50.0, 60.0, 70.0]:
+        r_ct = lyth_bound_constant_tilt(NS_PAPER, N_t)
+        la = brentq(lambda l: dphi_of_alpha(l, N_t) - 1.0, -3.0, 1.0)
+        a_c = 10.0 ** la
+        s = analyse(V_emodel(a_c), N_t, 1e-6, 15.0 * np.sqrt(1.5 * a_c))
+        ratios.append(r_ct / s['r'])
+        print(f"{'E-model':>14} {N_t:4.0f} {r_ct:11.4e} {s['r']:11.4e} {r_ct/s['r']:7.1f}")
+    for p in [8, 12, 20]:
+        for N_t in [50.0, 60.0, 70.0]:
+            r_ct = lyth_bound_constant_tilt(NS_PAPER, N_t)
+            lm = brentq(lambda l: dphi_of_mu(l, p, N_t) - 1.0, -1.0, 2.0)
+            s = analyse_hilltop(p, 10.0 ** lm, N_t)
+            ratios.append(r_ct / s['r'])
+            print(f"{'hilltop p=%d' % p:>14} {N_t:4.0f} {r_ct:11.4e} "
+                  f"{s['r']:11.4e} {r_ct/s['r']:7.1f}")
+    print()
+    print(f"两族合计范围: {min(ratios):.1f} -- {max(ratios):.1f}")
 
 if __name__ == "__main__":
     main()

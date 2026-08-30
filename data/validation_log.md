@@ -345,3 +345,21 @@ eps -> 1，r -> 16：alpha=1 时枢轴处 r = 2.96e-3，末期 r = 16，
 
 新增三条，pytest 共 10 条全部通过：
 test_lyth_bound_reproduces_published_table（ns=1 与
+
+## 2026-08-30 常倾斜界与精确值的倍数（两族）
+
+原稿在摘要、引言、§5.2 与 §8 四处写"15--18 倍"，
+该范围仅对 E-model 成立。补算 hilltop 后：
+
+| 模型 | N=50 | N=60 | N=70 |
+|---|---|---|---|
+| E-model | 18.0 | 16.8 | 15.4 |
+| hilltop p=8 | 36.5 | 35.5 | 33.7 |
+| hilltop p=12 | 27.1 | 25.9 | 24.3 |
+| hilltop p=20 | 22.2 | 21.0 | 19.5 |
+
+**两族合计 15.4 -- 36.5**，正确表述为"15--37"。
+偏差最大者为 hilltop p=8，即场程最难压低的一族。
+
+由 slowroll.py 的 main() 末段生成；
+新增 test_ratio_range_across_both_families 锁住上下界。

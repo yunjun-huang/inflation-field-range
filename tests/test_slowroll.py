@@ -134,3 +134,21 @@ def test_exact_bound_is_stricter_than_constant_tilt():
     r_ct = lyth_bound_constant_tilt(0.9743, 60.0)
     r_exact = 5.8325e-05          # E-model, N=60, 见 critical_points.csv
     assert r_ct / r_exact > 15.0
+
+def test_ratio_range_across_both_families():
+    """常倾斜界与精确值的倍数，两族合计落在 15--37"""
+    ratios = []
+    for N in [50.0, 60.0, 70.0]:
+        r_ct = lyth_bound_constant_tilt(0.9743, N)
+        la = brentq(lambda l: dphi_of_alpha(l, N) - 1.0, -3.0, 1.0)
+        a_c = 10.0 ** la
+        s = analyse(V_emodel(a_c), N, 1e-6, 15.0 * np.sqrt(1.5 * a_c))
+        ratios.append(r_ct / s['r'])
+    for p in [8, 12, 20]:
+        for N in [50.0, 60.0, 70.0]:
+            r_ct = lyth_bound_constant_tilt(0.9743, N)
+            lm = brentq(lambda l: dphi_of_mu(l, p, N) - 1.0, -1.0, 2.0)
+            s = analyse_hilltop(p, 10.0 ** lm, N)
+            ratios.append(r_ct / s['r'])
+    assert 15.0 < min(ratios) < 16.0, min(ratios)
+    assert 36.0 < max(ratios) < 37.0, max(ratios)
