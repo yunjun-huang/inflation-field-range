@@ -1,0 +1,64 @@
+"""N_crit for alternative lower edges of the n_s interval.
+
+N_crit(edge) is the number of e-folds at which the dphi = M_Pl model has
+n_s = edge (exact background, first-order pivot observables).
+
+To keep the run time short, n_s(N) of the critical model is computed on a grid
+of N (each point = one exact root-find for alpha_crit or mu_crit) and
+N_crit is then obtained from a cubic spline through the grid.
+
+Run:  python src/ncrit_edges.py            (all models, a few minutes)
+      python src/ncrit_edges.py E 8 12 20  (grid for chosen models only)
+"""
+import os, sys, json
+sys.path.insert(0, os.path.dirname(__file__))
+import numpy as np
+from scipy.interpolate import CubicSpline
+from scipy.optimize import brentq
+from exact_background import emodel_exact, alpha_crit_exact, hilltop_exact, mu_crit_exact
+
+EDGES = [("P-ACT-LB 2sigma lower edge (adopted)", 0.9675),
+         ("P-ACT 2sigma lower edge",              0.9633),
+         ("SPT+Planck+ACT 2sigma lower edge",     0.9613),
+         ("SPT+Planck 2sigma lower edge",         0.9566)]
+MU_GUESS = {8: 2.0119, 12: 2.6270, 20: 3.9176}   # slow-roll mu_crit at N=60
+GRID = np.arange(40.0, 82.1, 2.0)
+CACHE = os.path.join(os.path.dirname(__file__), "..", "data", "ncrit_grid.json")
+
+def ns_E(N):    return emodel_exact(alpha_crit_exact(N), N)['ns']
+def ns_H(p, N): return hilltop_exact(mu_crit_exact(p, N, MU_GUESS[p]), p, N)['ns']
+
+def load():
+    return json.load(open(CACHE)) if os.path.exists(CACHE) else {}
+
+def compute(models):
+    cache = load()
+    for m in models:
+        key = "E" if m == "E" else f"H{m}"
+        vals = []
+        for N in GRID:
+            try:
+                vals.append(ns_E(N) if m == "E" else ns_H(int(m), N))
+            except Exception:
+                vals.append(None)       # no solution (too few e-folds) at this N
+        cache[key] = {"N": GRID.tolist(), "ns": vals}
+        print("grid done:", key, flush=True)
+        os.makedirs(os.path.dirname(CACHE), exist_ok=True)
+        json.dump(cache, open(CACHE, "w"))
+
+def ncrit(key, edge):
+    d = load()[key]
+    pts = [(n, v) for n, v in zip(d["N"], d["ns"]) if v is not None]
+    N, v = np.array(pts).T
+    cs = CubicSpline(N, v)
+    return brentq(lambda x: cs(x) - edge, N[0], N[-1], xtol=1e-6)
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        compute(sys.argv[1:])
+    else:
+        compute(["E", "8", "12", "20"])
+    print(f"\n{'edge':40s} {'value':>7s} {'E-model':>8s} {'p=8':>8s} {'p=12':>8s} {'p=20':>8s}")
+    for name, edge in EDGES:
+        out = [ncrit(k, edge) for k in ("E", "H8", "H12", "H20")]
+        print(f"{name:40s} {edge:7.4f} " + " ".join(f"{x:8.2f}" for x in out))
