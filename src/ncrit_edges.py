@@ -7,8 +7,11 @@ To keep the run time short, n_s(N) of the critical model is computed on a grid
 of N (each point = one exact root-find for alpha_crit or mu_crit) and
 N_crit is then obtained from a cubic spline through the grid.
 
-Run:  python src/ncrit_edges.py            (all models, a few minutes)
-      python src/ncrit_edges.py E 8 12 20  (grid for chosen models only)
+Run:  python src/ncrit_edges.py              uses data/ncrit_grid.json (seconds);
+                                             builds any missing grid first
+      python src/ncrit_edges.py --recompute  rebuild all four grids (slow)
+      python src/ncrit_edges.py 8 12         rebuild the grids of chosen models
+                                             (E, 8, 12, 20)
 """
 import os, sys, json
 sys.path.insert(0, os.path.dirname(__file__))
@@ -54,10 +57,16 @@ def ncrit(key, edge):
     return brentq(lambda x: cs(x) - edge, N[0], N[-1], xtol=1e-6)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        compute(sys.argv[1:])
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
+    models = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if models:
+        compute(models)
     else:
-        compute(["E", "8", "12", "20"])
+        have = load()
+        todo = [m for m, k in (("E", "E"), ("8", "H8"), ("12", "H12"), ("20", "H20"))
+                if "--recompute" in flags or k not in have]
+        if todo:
+            compute(todo)
     print(f"\n{'edge':40s} {'value':>7s} {'E-model':>8s} {'p=8':>8s} {'p=12':>8s} {'p=20':>8s}")
     for name, edge in EDGES:
         out = [ncrit(k, edge) for k in ("E", "H8", "H12", "H20")]

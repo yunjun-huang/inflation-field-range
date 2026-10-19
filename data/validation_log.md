@@ -400,3 +400,29 @@ test_lyth_bound_reproduces_published_table（ns=1 与
 **待办.** `test_slowroll.py` 中 `test_exact_bound_is_stricter_than_
 constant_tilt` 与 `test_ratio_range_across_both_families` 两条，
 名字里的 "exact" 现在指向慢滚结果，需改名以免混淆。
+## 2026-10-19 — 评审意见修订：复现脚本与数值核对
+
+- 新增 `src/stability_check.py`：E-model（alpha_crit）与 hilltop p=8（mu_crit），N=60。
+  rtol/atol 收紧到 1e-13/1e-15，或 max_step 由 0.05 降到 0.01：
+  Δφ、n_s、r 的变化均 ≤ 2e-10。eps_2 的有限差分步长取 1e-4、1e-5、1e-6，n_s 变化 < 1e-10。
+- 新增 `src/ncrit_edges.py`：不同 n_s 下沿对应的 N_crit（网格存于 `data/ncrit_grid.json`，三次样条求根；
+  下沿 0.9675 一行与 `exact_background.py` 的直接求根一致到两位小数）。
+
+  | n_s 下沿 | E-model | p=8 | p=12 | p=20 |
+  |---|---|---|---|---|
+  | 0.9675 (P-ACT-LB) | 62.54 | 72.84 | 68.69 | 65.93 |
+  | 0.9633 (P-ACT) | 55.46 | 64.57 | 60.90 | 58.45 |
+  | 0.9613 (SPT+Planck+ACT) | 52.62 | 61.26 | 57.78 | 55.46 |
+  | 0.9566 (SPT+Planck) | 46.98 | 54.68 | 51.58 | 49.50 |
+
+- 新增 `src/reproduce_tables.py`：复现论文中 `exact_background.py` 不打印的数字
+  （alpha 扫描表、n_s(N) 表、swampland 表、最小场程表、最后几个 e-fold 的场程占比）。
+  结果：ALL MATCH。最后 3 / 5 个 e-fold 占 Δφ 的 57.4% / 65.1%。
+- hilltop 起点独立性（精确引擎）：起点提前 15 vs 25 个 e-folds，
+  mu_crit(p=8, N=60) = 1.6547187814 两者一致（差 6e-12），p=20: 3.2252422732（差 0）。
+- **更正**：Lynker–Schimmrigk Eq.(10) 的六位有效数字吻合只对慢滚引擎（`slowroll.py`）成立。
+  精确引擎在 mu=0.1 处 n_s 的相对偏差为 (6–13)e-4（p=8, N=60：0.96019 对 0.96111），
+  等价于 N 的有效偏移 −1.2 至 −1.5 e-folds，与终点条件 eps_H=1 对 eps_V=1 的差别同量级。
+  论文附录 A(iii) 已按此改写，不再把它当作精确引擎的独立验证。
+- 清理：仓库根目录里旧版 `exact_background.py`（缺少 E-model 起点重试循环）已删除，以 `src/exact_background.py` 为准。
+- `data/critical_points.csv` 是慢滚引擎的输出，不是论文表格里的精确值（README 已注明）。

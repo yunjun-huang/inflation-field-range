@@ -1,7 +1,8 @@
 """Fig 2: the sub-Planckian point enters the ACT window at N_crit.
 
 Trajectories are now obtained from the exact background equation of motion.
-The shaded band marks the excluded region N < N_crit; the dotted line marks
+The shaded band marks the region N < N_crit, where the critical model lies
+outside the adopted marginal n_s interval; the dotted line marks
 the conventional upper end N = 60, which is a separate statement.
 """
 import sys, os
@@ -47,11 +48,11 @@ ax.text(50.5, NS_ACT_LOW + 0.0004, r'P-ACT-LB  $2\sigma$ lower edge',
 
 ax.plot(N_CRIT, NS_ACT_LOW, 'o', ms=5, color='k', zorder=5)
 ax.annotate(rf'$N_{{\rm crit}} = {N_CRIT:.2f}$',
-            xy=(N_CRIT, NS_ACT_LOW), xytext=(65.0, 0.9635),
+            xy=(N_CRIT, NS_ACT_LOW), xytext=(65.0, 0.9618),
             fontsize=9, arrowprops=dict(arrowstyle='->', lw=0.8, color='0.3'))
 
-ax.text(52.0, 0.9700, 'excluded', fontsize=9, color='0.3')
-ax.text(68.5, 0.9690, 'allowed', fontsize=9, color='0.3')
+ax.text(51.0, 0.9700, 'outside the adopted\nmarginal interval', fontsize=9, color='0.3')
+ax.text(66.0, 0.9648, 'inside the adopted\nmarginal interval', fontsize=9, color='0.3')
 
 ax.set_xlim(50.0, 72.0)
 ax.set_ylim(0.9580, 0.9730)

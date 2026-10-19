@@ -12,7 +12,8 @@ from exact_background import (emodel_exact, hilltop_exact,
                               alpha_crit_exact, mu_crit_exact)
 
 N_TARGET = 60.0
-SIGMA_R_NEXTGEN = 1e-3          # CMB-S4 / LiteBIRD 目标灵敏度
+SIGMA_R_NEXTGEN = 1e-3          # round benchmark sigma(r) ~ 1e-3 (CMB-S4 design forecast as a
+                                # historical benchmark; LiteBIRD target sigma(r) < 0.002 at 68%)
 P_HILL = 8
 
 # 扫 alpha，收集 (r, dphi)。精确积分较慢，点数比慢滚版本少
@@ -53,7 +54,7 @@ ax.axhline(1.0, color='0.4', ls='--', lw=1.2)
 ax.axvline(SIGMA_R_NEXTGEN, color='0.4', ls=':', lw=1.2)
 
 ax.text(2e-6, 1.15, r'$\Delta\phi = M_{\rm Pl}$', fontsize=9, color='0.3')
-ax.text(1.25e-3, 12.0, r'CMB-S4 / LiteBIRD  $\sigma(r)$',
+ax.text(1.25e-3, 0.85, r'benchmark  $\sigma(r)\sim10^{-3}$',
         fontsize=8, color='0.3', rotation=90, va='top')
 
 ax.plot(r_crit_E, 1.0, 'o', ms=5, color='k', zorder=5)
