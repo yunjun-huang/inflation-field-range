@@ -34,8 +34,38 @@ Run all commands from the repository root.
 | `python src/reproduce_tables.py` | E-model alpha scan, n_s(N) of the E-model critical model, swampland table, minimum-excursion table (hilltop), e-fold accumulation numbers. Prints `ALL MATCH` or the entries that differ from the manuscript |
 | `python src/stability_check.py` | solver-tolerance / step-size check (Appendix B) |
 | `python src/ncrit_edges.py` | N_crit for other n_s lower edges. Reads `data/ncrit_grid.json` (seconds); `--recompute` rebuilds the grid (slow) |
-| `python figures/fig1_r_vs_dphi.py`, `python figures/fig2_ncrit.py` | Figures 1 and 2 |
-| `python src/slowroll.py`, `pytest tests/` | slow-roll engine output, validation targets of Appendix A, regression tests |
+| `python src/branch.py` | unit-excursion branch for N = 44-80 (all four models), first- and second-order observables, V/V0 at pivot and end; writes `data/branch_grid.json` (~1 min on 2 cores) |
+| `python src/joint_posterior.py ACT_DIR PLANCK_DIR` | joint (n_s, r) HPD regions from the public ACT DR6 LCDM+r chains (see below); writes `data/joint_posterior.json` (~2 min) |
+| `python src/reheating.py` | reheating map: N for instantaneous reheating, required w and T_reh; writes `data/reheating.json` (seconds) |
+| `python src/tables_v2.py` | prints the numbers of the second-order, N_crit and reheating tables; checks the earlier N_crit tables (`ALL MATCH`) |
+| `python figures/fig1_r_vs_dphi.py` | Fig. 1 |
+| `python figures/fig2_excursion_vs_efolds.py` | Fig. 2 (where the excursion is accumulated) and the accumulation fractions quoted in the text |
+| `python figures/fig3_branch_reheating.py` | Fig. 3 (n_s on the critical branch, reheating ranges) |
+| `python figures/fig4_joint_posterior.py ACT_DIR PLANCK_DIR` | Fig. 4 (joint posterior with the critical branches) |
+| `python src/slowroll.py`, `pytest tests/` | slow-roll engine output, validation targets of Appendix A, regression tests (`tests/test_extensions.py` covers the v2.0 additions) |
+
+Recommended order for a full rebuild: `branch.py` -> `joint_posterior.py` -> `reheating.py` -> `tables_v2.py` -> figures.
+
+## Public chains (not included)
+
+The joint-posterior analysis uses the ACT DR6.02 "R model" (LCDM + r) chains from LAMBDA,
+<https://lambda.gsfc.nasa.gov/product/act/act_dr6.02/act_dr6.02_chains_r_get.html>:
+
+- `p-actlite-bk-l-b_r_camb.tar.gz` - P-ACT + BK18 + CMB lensing + BAO (adopted)
+- `planck-bk-l-b_r_camb.tar.gz` - Planck + BK18 + CMB lensing + BAO (comparison)
+
+Unpack each and pass the directory (e.g. `.../p-actlite-bk-l-b_r_camb`) to the scripts.
+The derived summary is committed in `data/joint_posterior.json`, so `reheating.py`,
+`tables_v2.py` and Figs. 1-3 run without the chains.
+
+## Second order and reheating (v2.0)
+
+- Second-order observables use eps2 and eps3 obtained analytically from the
+  equation of motion (needs V''), with n_s - 1 = -2e1 - e2 - 2e1^2 - (2C+3)e1e2 - Ce2e3,
+  r = 16e1(1 + Ce2), C = gamma_E + ln 2 - 2.
+- Reheating: N = 67 - ln(k*/a0H0) + 1/4 ln(V*^2/rho_end) + (1-3w)/(12(1+w)) ln(rho_th/rho_end)
+  - 1/12 ln g_th, with V* fixed by A_s (first order) and rho_end = 3/2 V_end on the exact
+  background; A_s and H0 are the posterior means of the adopted chain; T_reh >= 4.7 MeV.
 
 ## Numerical settings (exact background)
 
@@ -58,5 +88,5 @@ Run all commands from the repository root.
 - `src/` - exact-background and slow-roll engines, stability, N_crit and table-reproduction scripts
 - `tests/` - validation / regression tests
 - `figures/` - scripts and generated figures
-- `data/` - validation log, N_crit grid, slow-roll critical points
+- `data/` - validation log, N_crit grid, slow-roll critical points, branch grid, joint-posterior and reheating summaries
 - `crosscheck_emodel.py`, `crosscheck_hilltop.py` - independent slow-roll implementations (analytic derivatives) used as cross-checks

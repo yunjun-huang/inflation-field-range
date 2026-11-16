@@ -1,77 +1,56 @@
-"""Fig 1: field excursion vs tensor-to-scalar ratio, alpha-attractor E-model.
-
-Trajectories are now obtained from the exact background equation of motion
-(src/exact_background.py) rather than the slow-roll approximation.
-"""
+"""Fig. 1: field excursion against r at N = 60, with the current bound and
+next-generation sensitivity marked (exact background)."""
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, '..', 'src')); sys.path.insert(0, HERE)
 import numpy as np
 import matplotlib.pyplot as plt
-from exact_background import (emodel_exact, hilltop_exact,
-                              alpha_crit_exact, mu_crit_exact)
+from exact_background import emodel_exact, hilltop_exact, alpha_crit_exact, mu_crit_exact
+from style import setup, save, COL, COLORS, LABELS, GREY
 
 N_TARGET = 60.0
-SIGMA_R_NEXTGEN = 1e-3          # round benchmark sigma(r) ~ 1e-3 (CMB-S4 design forecast as a
-                                # historical benchmark; LiteBIRD target sigma(r) < 0.002 at 68%)
+R_BK18 = 0.036               # BK18 95% upper limit
+SIGMA_LO, SIGMA_HI = 1e-3, 2e-3   # round benchmark / LiteBIRD target sigma(r) (68%)
 P_HILL = 8
 
-# 扫 alpha，收集 (r, dphi)。精确积分较慢，点数比慢滚版本少
-alphas = np.geomspace(3e-4, 30.0, 30)
 rs, dphis = [], []
-for a in alphas:
+for a in np.geomspace(3e-4, 30.0, 34):
     try:
-        res = emodel_exact(a, N_TARGET)
+        d = emodel_exact(a, N_TARGET); rs.append(d['r']); dphis.append(d['dphi'])
     except Exception:
-        continue
-    rs.append(res['r'])
-    dphis.append(res['dphi'])
-
-# hilltop，扫 mu（固定 p）
-mus = np.geomspace(0.6, 25.0, 30)
+        pass
 rs_h, dphis_h = [], []
-for m in mus:
+for m in np.geomspace(0.6, 25.0, 34):
     try:
-        res = hilltop_exact(m, P_HILL, N_TARGET)
+        d = hilltop_exact(m, P_HILL, N_TARGET); rs_h.append(d['r']); dphis_h.append(d['dphi'])
     except Exception:
-        continue
-    rs_h.append(res['r'])
-    dphis_h.append(res['dphi'])
-
-# 临界点由求根给出，不再写死
+        pass
 r_crit_E = emodel_exact(alpha_crit_exact(N_TARGET), N_TARGET)['r']
-r_crit_H = hilltop_exact(mu_crit_exact(P_HILL, N_TARGET, 2.0119),
-                         P_HILL, N_TARGET)['r']
+r_crit_H = hilltop_exact(mu_crit_exact(P_HILL, N_TARGET, 2.0119), P_HILL, N_TARGET)['r']
 print(f"r_crit: E-model {r_crit_E:.4e}, hilltop p={P_HILL} {r_crit_H:.4e}")
 
-fig, ax = plt.subplots(figsize=(6.0, 4.5))
+setup()
+fig, ax = plt.subplots(figsize=(COL, 2.75))
+ax.axhspan(1.0, 30.0, color='0.93', zorder=0, lw=0)
+ax.axvspan(R_BK18, 1.0, color='0.80', zorder=0, lw=0)
+ax.axvspan(SIGMA_LO, SIGMA_HI, color='#f5d6a8', zorder=0, lw=0)
+ax.axhline(1.0, color=GREY, ls='--', lw=0.8)
+ax.loglog(rs, dphis, color=COLORS["E"], label=LABELS["E"])
+ax.loglog(rs_h, dphis_h, color=COLORS["H8"], ls='--', label=LABELS["H8"])
+ax.plot(r_crit_E, 1.0, 'o', ms=4, color=COLORS["E"], zorder=5)
+ax.plot(r_crit_H, 1.0, 's', ms=4, mfc='white', color=COLORS["H8"], zorder=5)
 
-ax.loglog(rs, dphis, color='k', lw=1.8, label=r'$\alpha$-attractor (E-model)')
-ax.loglog(rs_h, dphis_h, color='k', lw=1.5, ls='--',
-          label=rf'hilltop ($p={P_HILL}$)')
-ax.axhspan(1.0, 20.0, color='0.92', zorder=0)
-ax.axhline(1.0, color='0.4', ls='--', lw=1.2)
-ax.axvline(SIGMA_R_NEXTGEN, color='0.4', ls=':', lw=1.2)
+ax.text(2.2e-4, 1.15, r'super-Planckian', fontsize=6.5, color=GREY)
+ax.text(2.2e-4, 0.85, r'sub-Planckian', fontsize=6.5, color=GREY, va='top')
+ax.text(0.046, 0.14, 'excluded\n(BK18)', fontsize=6, color='0.25', rotation=90, va='bottom')
+ax.text(1.05e-3, 0.14, r'$\sigma(r)$ targets', fontsize=6, color='0.25', rotation=90, va='bottom')
+ax.annotate(r'$r_{\rm crit}$', xy=(r_crit_E, 1.0), xytext=(9e-6, 0.35), fontsize=7,
+            arrowprops=dict(arrowstyle='->', lw=0.6, color=GREY))
+ax.annotate('', xy=(r_crit_H, 1.0), xytext=(1.05e-5, 0.42),
+            arrowprops=dict(arrowstyle='->', lw=0.6, color=GREY))
 
-ax.text(2e-6, 1.15, r'$\Delta\phi = M_{\rm Pl}$', fontsize=9, color='0.3')
-ax.text(1.25e-3, 0.85, r'benchmark  $\sigma(r)\sim10^{-3}$',
-        fontsize=8, color='0.3', rotation=90, va='top')
-
-ax.plot(r_crit_E, 1.0, 'o', ms=5, color='k', zorder=5)
-ax.plot(r_crit_H, 1.0, 's', ms=5, color='k', mfc='white', zorder=5)
-ax.annotate(rf'$r_{{\rm crit}} = {r_crit_E*1e5:.1f} \times 10^{{-5}}$',
-            xy=(r_crit_E, 1.0), xytext=(1.5e-6, 2.5),
-            fontsize=8, arrowprops=dict(arrowstyle='->', lw=0.8, color='0.3'))
-
-ax.set_xlim(1e-6, 1e-1)
-ax.set_ylim(0.1, 20.0)
-ax.set_xlabel(r'tensor-to-scalar ratio  $r$')
-ax.set_ylabel(r'field excursion  $\Delta\phi \, / \, M_{\rm Pl}$')
-ax.set_title(rf'$N = {N_TARGET:.0f}$', fontsize=10)
-ax.legend(frameon=False, loc='upper left', fontsize=9)
-
-fig.tight_layout()
-out = os.path.join(os.path.dirname(__file__), 'fig1_r_vs_dphi.pdf')
-fig.savefig(out)
-fig.savefig(out.replace('.pdf', '.png'), dpi=200)
-print(f"saved: {out}")
+ax.set_xlim(1e-6, 0.1); ax.set_ylim(0.1, 20.0)
+ax.set_xlabel(r'tensor-to-scalar ratio $r$')
+ax.set_ylabel(r'field excursion $\Delta\phi/M_{\rm Pl}$')
+ax.legend(frameon=False, loc='upper left')
+save(fig, os.path.join(HERE, 'fig1_r_vs_dphi.pdf'))
